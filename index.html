@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="A personal command centre for planning a move from Athens to Kristiansand."
+    />
+    <meta name="theme-color" content="#153d3b" />
+    <title>Northbound — Norway move dashboard</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="script.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Primary navigation">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 32 32" role="img">
+              <path d="M16 3 27 27l-11-5-11 5L16 3Z" />
+              <path d="m16 3 2 15-2 4-2-4 2-15Z" />
+            </svg>
+          </span>
+          <span>
+            <strong>Northbound</strong>
+            <small>Norway move planner</small>
+          </span>
+        </div>
+
+        <nav class="main-nav">
+          <button class="nav-item is-active" type="button" data-view-target="dashboard">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 13h6V4H4v9Zm0 7h6v-4H4v4Zm10 0h6v-9h-6v9Zm0-16v4h6V4h-6Z" /></svg>
+            <span>Dashboard</span>
+          </button>
+          <button class="nav-item" type="button" data-view-target="tasks">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m9 11 2 2 4-5M5 4h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z" /></svg>
+            <span>Tasks</span>
+          </button>
+          <button class="nav-item" type="button" data-view-target="finances">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 2v20m5-16H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
+            <span>Finances</span>
+          </button>
+          <button class="nav-item" type="button" data-view-target="plan">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M6 3v3m12-3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Zm3 8h3v3H8v-3Z" /></svg>
+            <span>Move plan</span>
+          </button>
+        </nav>
+
+        <div class="sidebar-note">
+          <span class="sidebar-note-icon" aria-hidden="true">↗</span>
+          <p>One clear step at a time.</p>
+          <small>Everything is saved on this device.</small>
+        </div>
+      </aside>
+
+      <div class="app-main">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow" id="todayLabel"></p>
+            <h1 id="pageTitle">Good day</h1>
+          </div>
+          <div class="topbar-actions">
+            <span class="phase-pill" id="phasePill"></span>
+            <button class="button button-primary" id="quickAddTask" type="button">
+              <span aria-hidden="true">+</span> Add task
+            </button>
+          </div>
+        </header>
+
+        <main id="main-content">
+          <section class="view is-active" id="dashboardView" data-view="dashboard" aria-labelledby="pageTitle">
+            <div class="countdown-card">
+              <div class="countdown-copy">
+                <p class="overline">The move to Norway</p>
+                <div class="countdown-number-wrap">
+                  <strong class="countdown-number" id="countdownNumber">—</strong>
+                  <span class="countdown-unit" id="countdownUnit">days to go</span>
+                </div>
+                <p class="route-line">
+                  <span id="heroOrigin">Athens</span>
+                  <span class="route-track" aria-hidden="true"><i></i></span>
+                  <span id="heroDestination">Kristiansand</span>
+                </p>
+                <p class="countdown-date" id="countdownDate"></p>
+              </div>
+              <div class="hero-progress" aria-label="Pre-move task progress">
+                <div class="progress-ring" id="heroProgressRing">
+                  <span><strong id="heroProgressValue">0%</strong>ready</span>
+                </div>
+                <p id="heroProgressCaption">Start with one important task.</p>
+              </div>
+              <button class="icon-button hero-settings" id="openPlanSettings" type="button" aria-label="Edit move plan" title="Edit move plan">
+                <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1A1.7 1.7 0 0 0 9 4.6 1.7 1.7 0 0 0 10 3v-.2h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z" /></svg>
+              </button>
+            </div>
+
+            <div class="dashboard-grid">
+              <section class="panel priorities-panel">
+                <div class="panel-heading">
+                  <div>
+                    <p class="overline overline-dark">Focus now</p>
+                    <h2>Your next moves</h2>
+                  </div>
+                  <button class="text-button" type="button" data-view-link="tasks">All tasks <span aria-hidden="true">→</span></button>
+                </div>
+                <div class="priority-list" id="dashboardPriorities"></div>
+              </section>
+
+              <section class="panel finance-snapshot">
+                <div class="panel-heading">
+                  <div>
+                    <p class="overline overline-dark">Financial readiness</p>
+                    <h2>Move fund</h2>
+                  </div>
+                  <button class="text-button" type="button" data-view-link="finances">Details <span aria-hidden="true">→</span></button>
+                </div>
+                <div class="fund-amount">
+                  <span>Available by move day</span>
+                  <strong id="dashboardAvailable">€0</strong>
+                </div>
+                <div class="meter meter-large" aria-hidden="true"><i id="dashboardSavingsMeter"></i></div>
+                <div class="snapshot-grid">
+                  <div><span>Saved now</span><strong id="dashboardSavings">€0</strong></div>
+                  <div><span>Target</span><strong id="dashboardTarget">€0</strong></div>
+                  <div><span>Move costs</span><strong id="dashboardMoveCosts">€0</strong></div>
+                  <div><span>After the move</span><strong id="dashboardRemaining">€0</strong></div>
+                </div>
+                <div class="runway-callout" id="dashboardRunway"></div>
+              </section>
+
+              <section class="panel progress-panel">
+                <div class="panel-heading">
+                  <div>
+                    <p class="overline overline-dark">Preparation</p>
+                    <h2>Progress by area</h2>
+                  </div>
+                  <span class="mini-stat" id="completedTaskCount"></span>
+                </div>
+                <div class="category-progress" id="categoryProgress"></div>
+              </section>
+
+              <section class="panel milestone-panel">
+                <div class="panel-heading">
+                  <div>
+                    <p class="overline overline-dark">Coming up</p>
+                    <h2>Move phases</h2>
+                  </div>
+                  <button class="text-button" type="button" data-view-link="plan">View plan <span aria-hidden="true">→</span></button>
+                </div>
+                <div class="phase-preview" id="phasePreview"></div>
+              </section>
+            </div>
+          </section>
+
+          <section class="view" id="tasksView" data-view="tasks" aria-labelledby="tasksHeading">
+            <div class="section-heading">
+              <div>
+                <p class="overline overline-dark">Action list</p>
+                <h2 id="tasksHeading">Tasks & goals</h2>
+                <p>Keep the next step obvious and the rest organised.</p>
+              </div>
+              <button class="button button-primary desktop-action" id="addTaskFromPage" type="button"><span aria-hidden="true">+</span> Add task</button>
+            </div>
+
+            <div class="task-stats" id="taskStats"></div>
+
+            <div class="task-toolbar">
+              <label class="search-field">
+                <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" /><path d="m20 20-4-4" /></svg>
+                <span class="sr-only">Search tasks</span>
+                <input id="taskSearch" type="search" placeholder="Search tasks" autocomplete="off" />
+              </label>
+              <label>
+                <span class="sr-only">Filter by phase</span>
+                <select id="phaseFilter">
+                  <option value="all">All phases</option>
+                  <option value="pre-move">Pre-move</option>
+                  <option value="arrival">Arrival</option>
+                  <option value="settling">Settling in</option>
+                </select>
+              </label>
+              <label>
+                <span class="sr-only">Filter by status</span>
+                <select id="statusFilter">
+                  <option value="open">Open tasks</option>
+                  <option value="all">All statuses</option>
+                  <option value="overdue">Overdue</option>
+                  <option value="completed">Completed</option>
+                </select>
+              </label>
+              <label>
+                <span class="sr-only">Filter by category</span>
+                <select id="categoryFilter">
+                  <option value="all">All categories</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="task-list" id="taskList"></div>
+          </section>
+
+          <section class="view" id="financesView" data-view="finances" aria-labelledby="financesHeading">
+            <div class="section-heading">
+              <div>
+                <p class="overline overline-dark">Financial plan</p>
+                <h2 id="financesHeading">Know your landing position</h2>
+                <p>Plan in one currency so every estimate stays comparable.</p>
+              </div>
+              <span class="currency-badge" id="currencyBadge">EUR planning currency</span>
+            </div>
+
+            <div class="finance-hero-grid" id="financeMetrics"></div>
+
+            <div class="finance-layout">
+              <section class="panel finance-input-panel">
+                <div class="panel-heading">
+                  <div>
+                    <p class="overline overline-dark">Starting point</p>
+                    <h2>Savings plan</h2>
+                  </div>
+                </div>
+                <form id="financeOverviewForm" class="stacked-form">
+                  <label>Current savings <span class="input-with-prefix"><span data-currency-symbol>€</span><input id="currentSavings" name="currentSavings" type="number" min="0" step="0.01" required /></span></label>
+                  <label>Savings target <span class="input-with-prefix"><span data-currency-symbol>€</span><input id="savingsGoal" name="savingsGoal" type="number" min="0" step="0.01" required /></span></label>
+                  <label>Expected income before moving <span class="input-with-prefix"><span data-currency-symbol>€</span><input id="expectedIncome" name="expectedIncome" type="number" min="0" step="0.01" required /></span></label>
+                  <button class="button button-secondary" type="submit">Save savings plan</button>
+                </form>
+              </section>
+
+              <section class="panel expense-panel">
+                <div class="panel-heading">
+                  <div>
+                    <p class="overline overline-dark">One-off costs</p>
+                    <h2>Planned move expenses</h2>
+                  </div>
+                  <button class="button button-quiet button-small" id="addMoveExpense" type="button"><span aria-hidden="true">+</span> Add</button>
+                </div>
+                <div class="expense-list" id="moveExpenseList"></div>
+                <div class="expense-total"><span>Total planned</span><strong id="moveExpenseTotal"></strong></div>
+              </section>
+
+              <section class="panel expense-panel monthly-panel">
+                <div class="panel-heading">
+                  <div>
+                    <p class="overline overline-dark">After arrival</p>
+                    <h2>Monthly living costs</h2>
+                  </div>
+                  <button class="button button-quiet button-small" id="addMonthlyExpense" type="button"><span aria-hidden="true">+</span> Add</button>
+                </div>
+                <div class="expense-list" id="monthlyExpenseList"></div>
+                <div class="expense-total"><span>Estimated per month</span><strong id="monthlyExpenseTotal"></strong></div>
+              </section>
+
+              <section class="panel runway-panel">
+                <p class="overline">Estimated runway</p>
+                <strong id="runwayMonths">—</strong>
+                <span>months covered after move costs</span>
+                <p id="runwayExplanation"></p>
+              </section>
+            </div>
+          </section>
+
+          <section class="view" id="planView" data-view="plan" aria-labelledby="planHeading">
+            <div class="section-heading">
+              <div>
+                <p class="overline overline-dark">The bigger picture</p>
+                <h2 id="planHeading">Your move plan</h2>
+                <p id="planRouteSummary"></p>
+              </div>
+              <button class="button button-secondary" id="editPlanFromPage" type="button">Edit move details</button>
+            </div>
+
+            <section class="phase-timeline" id="phaseTimeline"></section>
+
+            <section class="panel plan-task-panel">
+              <div class="panel-heading">
+                <div>
+                  <p class="overline overline-dark">Phase checklist</p>
+                  <h2 id="phaseChecklistHeading">Pre-move</h2>
+                </div>
+                <div class="segmented-control" id="planPhaseTabs" aria-label="Choose move phase">
+                  <button class="is-active" type="button" data-plan-phase="pre-move">Pre-move</button>
+                  <button type="button" data-plan-phase="arrival">Arrival</button>
+                  <button type="button" data-plan-phase="settling">Settling in</button>
+                </div>
+              </div>
+              <div class="task-list task-list-compact" id="phaseTaskList"></div>
+            </section>
+
+            <section class="data-panel">
+              <div>
+                <h3>Your data stays yours</h3>
+                <p>Northbound stores everything in this browser only. Export a backup before changing devices or clearing browser data.</p>
+              </div>
+              <div class="data-actions">
+                <button class="button button-secondary" id="exportData" type="button">Export backup</button>
+                <button class="button button-danger-quiet" id="resetData" type="button">Reset app data</button>
+              </div>
+            </section>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <dialog class="modal" id="taskDialog">
+      <form method="dialog" id="taskForm">
+        <div class="modal-header">
+          <div><p class="overline overline-dark">Task details</p><h2 id="taskDialogTitle">Add a task</h2></div>
+          <button class="icon-button modal-close" value="cancel" aria-label="Close" type="submit">×</button>
+        </div>
+        <input id="taskId" name="taskId" type="hidden" />
+        <div class="form-grid">
+          <label class="full-width">Task name<input id="taskTitle" name="title" type="text" maxlength="100" required placeholder="What needs to happen?" /></label>
+          <label>Category<select id="taskCategory" name="category"></select></label>
+          <label>Move phase<select id="taskPhase" name="phase"><option value="pre-move">Pre-move</option><option value="arrival">Arrival</option><option value="settling">Settling in</option></select></label>
+          <label>Due date<input id="taskDueDate" name="dueDate" type="date" /></label>
+          <label>Reminder date<input id="taskReminderDate" name="reminderDate" type="date" /></label>
+          <label class="full-width">Notes<textarea id="taskNotes" name="notes" rows="3" maxlength="500" placeholder="Useful details, links, or the next action"></textarea></label>
+          <label class="checkbox-field full-width"><input id="taskImportant" name="important" type="checkbox" /><span><strong>Mark as important</strong><small>Important tasks are raised on your dashboard.</small></span></label>
+        </div>
+        <div class="modal-actions"><button class="button button-quiet" value="cancel" type="submit">Cancel</button><button class="button button-primary" id="saveTaskButton" value="default" type="submit">Save task</button></div>
+      </form>
+    </dialog>
+
+    <dialog class="modal modal-small" id="expenseDialog">
+      <form method="dialog" id="expenseForm">
+        <div class="modal-header">
+          <div><p class="overline overline-dark" id="expenseDialogEyebrow">Planned expense</p><h2 id="expenseDialogTitle">Add expense</h2></div>
+          <button class="icon-button modal-close" value="cancel" aria-label="Close" type="submit">×</button>
+        </div>
+        <input id="expenseId" name="expenseId" type="hidden" />
+        <input id="expenseType" name="expenseType" type="hidden" />
+        <div class="form-grid single-column">
+          <label>Expense name<input id="expenseName" name="name" type="text" maxlength="80" required placeholder="e.g. Flight and luggage" /></label>
+          <label>Estimated amount<span class="input-with-prefix"><span data-currency-symbol>€</span><input id="expenseAmount" name="amount" type="number" min="0" step="0.01" required /></span></label>
+        </div>
+        <div class="modal-actions"><button class="button button-quiet" value="cancel" type="submit">Cancel</button><button class="button button-primary" value="default" type="submit">Save expense</button></div>
+      </form>
+    </dialog>
+
+    <dialog class="modal modal-small" id="planDialog">
+      <form method="dialog" id="planForm">
+        <div class="modal-header">
+          <div><p class="overline overline-dark">Journey details</p><h2>Edit move plan</h2></div>
+          <button class="icon-button modal-close" value="cancel" aria-label="Close" type="submit">×</button>
+        </div>
+        <div class="form-grid single-column">
+          <label>Moving from<input id="planOrigin" name="origin" type="text" maxlength="60" required /></label>
+          <label>Moving to<input id="planDestination" name="destination" type="text" maxlength="60" required /></label>
+          <label>Move date<input id="planMoveDate" name="moveDate" type="date" required /></label>
+          <label>Planning currency<select id="planCurrency" name="currency"><option value="EUR">Euro (EUR)</option><option value="NOK">Norwegian krone (NOK)</option><option value="GBP">British pound (GBP)</option><option value="USD">US dollar (USD)</option></select></label>
+          <p class="form-help">Use one currency for all savings and expense estimates so the runway calculation stays meaningful.</p>
+        </div>
+        <div class="modal-actions"><button class="button button-quiet" value="cancel" type="submit">Cancel</button><button class="button button-primary" value="default" type="submit">Save move plan</button></div>
+      </form>
+    </dialog>
+
+    <dialog class="modal modal-small confirm-modal" id="confirmDialog">
+      <form method="dialog">
+        <span class="confirm-icon" aria-hidden="true">!</span>
+        <h2 id="confirmTitle">Are you sure?</h2>
+        <p id="confirmMessage"></p>
+        <div class="modal-actions"><button class="button button-quiet" value="cancel">Cancel</button><button class="button button-danger" id="confirmAction" value="confirm">Confirm</button></div>
+      </form>
+    </dialog>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </body>
+</html>

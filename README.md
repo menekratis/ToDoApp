@@ -158,3 +158,58 @@ Build the product iteratively.
 The first goal is not to predict every future feature.
 
 The first goal is to create a useful version, use it in real life, identify problems, and improve it based on actual usage.
+
+## Proof of concept implementation
+
+The repository now contains a functional, responsive single-page application called **Northbound**. It uses only vanilla HTML, CSS, and JavaScript; there is no build step, framework, account system, or backend.
+
+### What is included
+
+- A dashboard with a live move countdown, automatic move phase, pre-move completion ring, prioritised tasks, financial snapshot, progress by category, and phase overview.
+- Full task management: add, edit, complete, reopen, delete, search, and filter by phase, status, and category.
+- Task due dates, optional reminder dates, notes, importance flags, and automatic overdue/upcoming prioritisation.
+- A move-specific starting checklist covering driving licence work, health appointments, documents, packing, PC shipping, winter clothing, studies, Norwegian practice, arrival administration, budgeting, and finding work.
+- Financial tracking for current savings, a savings target, expected pre-move income, individual move costs, and recurring monthly costs.
+- Automatic calculations for available funds on move day, money remaining after move costs, savings progress, and estimated post-move runway.
+- Editable origin, destination, move date, and planning currency.
+- Automatic pre-move, arrival (first 30 days), and settling-in phases.
+- Browser-local persistence after every change, plus JSON backup export and a confirmed reset action.
+- Responsive layouts for desktop, tablet, and mobile, with keyboard focus states and accessible native dialogs.
+
+Financial values intentionally start at zero so the dashboard does not present invented personal figures. The starter expense rows are prompts to fill in with real estimates.
+
+## Run locally
+
+No installation is required. Serve the directory with any static file server so browser storage behaves consistently. For example:
+
+```bash
+python3 -m http.server 8766
+```
+
+Then open `http://localhost:8766`.
+
+Opening `index.html` directly also works in modern browsers, although a local server is recommended.
+
+## Data and privacy
+
+All application data is stored under the `northbound-move-dashboard-v1` key in the current browser's `localStorage`. It never leaves the device. Clearing browser storage removes the data, so use **Move plan -> Export backup** before clearing data or changing devices.
+
+The exported JSON is intended as a safety copy for this proof of concept. Import is a sensible follow-up feature, but is not included yet.
+
+## Verification completed
+
+The proof of concept was checked with:
+
+- JavaScript syntax validation.
+- HTML parsing and repository whitespace checks.
+- Local HTTP checks for the HTML, stylesheet, script, responsive rules, and persistence code.
+- Executable flow tests covering task add/edit/complete/reopen/delete, savings updates, move and monthly expenses, runway calculations, move-plan changes, and persistence after reloading saved state.
+
+## Project structure
+
+```text
+index.html   Application structure, views, forms, and dialogs
+style.css    Nordic-inspired responsive design and interaction states
+script.js    State, persistence, calculations, rendering, and user actions
+README.md    Product brief and implementation notes
+```
