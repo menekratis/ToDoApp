@@ -1,7 +1,17 @@
 "use strict";
 
-const STORAGE_KEY = "northbound-move-dashboard-v1";
-const DATA_VERSION = 1;
+import {
+  dateOnlyToLocalDate,
+  getSystemTimezone,
+  offsetDate,
+  dateOnlyInTimezone,
+} from "./js/domain/dates.js";
+import { getFinancialMetrics, toNonNegativeAmount as toAmount } from "./js/domain/finance.js";
+import { getMovePhase, getMoveStatus } from "./js/domain/move.js";
+import { createReminderFields, getReminderDateForInput } from "./js/domain/reminders.js";
+import { compareTasksByPriority, getTaskDueStatus } from "./js/domain/tasks.js";
+import { LocalStorageStateRepository } from "./js/repositories/local-storage-state-repository.js";
+
 const CATEGORIES = ["Documents", "Health", "Finance", "Norway", "Packing", "Learning", "Work", "Personal"];
 const PHASES = {
   "pre-move": {
@@ -28,6 +38,8 @@ const ICONS = {
 };
 
 let state;
+const repository = new LocalStorageStateRepository();
+const deviceTimezone = getSystemTimezone();
 let activeView = "dashboard";
 let selectedPlanPhase = "pre-move";
 let pendingConfirmation = null;
@@ -35,12 +47,12 @@ let toastTimer = null;
 
 const elements = {};
 
-document.addEventListener("DOMContentLoaded", init);
+document.addEventListener("DOMContentLoaded", () => void init());
 
-function init() {
+async function init() {
   cacheElements();
   populateCategoryControls();
-  state = loadState();
+  state = await repository.load();
   bindEvents();
 
   const requestedView = window.location.hash.replace("#", "");
@@ -122,11 +134,16 @@ function bindEvents() {
   document.getElementById("exportData").addEventListener("click", exportData);
   document.getElementById("resetData").addEventListener("click", requestReset);
 
-  elements.confirmDialog.addEventListener("close", () => {
+  elements.confirmDialog.addEventListener("close", async () => {
     if (elements.confirmDialog.returnValue === "confirm" && pendingConfirmation) {
       const action = pendingConfirmation;
       pendingConfirmation = null;
-      action();
+      try {
+        await action();
+      } catch (error) {
+        console.error("Northbound could not complete the requested action.", error);
+        showToast("That action could not be completed.");
+      }
     } else {
       pendingConfirmation = null;
     }
@@ -146,101 +163,15 @@ function bindEvents() {
   });
 }
 
-function createInitialState() {
-  const moveDate = "2026-09-10";
-  const now = new Date().toISOString();
-  const task = (title, category, phase, dueOffset, important, notes) => ({
-    id: createId(),
-    title,
-    category,
-    phase,
-    dueDate: offsetDate(moveDate, dueOffset),
-    reminderDate: dueOffset < 0 ? offsetDate(moveDate, dueOffset - 3) : "",
-    important,
-    notes,
-    completed: false,
-    createdAt: now,
-    updatedAt: now,
-  });
-
-  return {
-    version: DATA_VERSION,
-    settings: {
-      origin: "Athens",
-      destination: "Kristiansand",
-      moveDate,
-      currency: "EUR",
-    },
-    finance: {
-      currentSavings: 0,
-      savingsGoal: 0,
-      expectedIncome: 0,
-      moveExpenses: [
-        { id: createId(), name: "Travel and luggage", amount: 0 },
-        { id: createId(), name: "PC and monitor shipping", amount: 0 },
-        { id: createId(), name: "Winter clothing", amount: 0 },
-        { id: createId(), name: "Documents and fees", amount: 0 },
-      ],
-      monthlyExpenses: [
-        { id: createId(), name: "Housing", amount: 0 },
-        { id: createId(), name: "Food and groceries", amount: 0 },
-        { id: createId(), name: "Transport", amount: 0 },
-        { id: createId(), name: "Other essentials", amount: 0 },
-      ],
-    },
-    tasks: [
-      task("Complete driving licence requirements", "Documents", "pre-move", -52, true, "Confirm every remaining step and collect the required paperwork."),
-      task("Book final doctor and dental appointments", "Health", "pre-move", -42, true, "Leave enough time for follow-ups and prescription copies."),
-      task("Gather and scan essential documents", "Documents", "pre-move", -34, true, "Keep paper originals together and save a secure digital copy."),
-      task("Confirm PC and monitor shipping plan", "Packing", "pre-move", -27, true, "Compare safe packing, insurance, tracking, and delivery timing."),
-      task("Buy Norway-ready winter layers", "Personal", "pre-move", -18, false, "Prioritise waterproof outerwear and practical layers."),
-      task("Finish the full packing checklist", "Packing", "pre-move", -14, true, "Separate carry-on essentials from shipped items."),
-      task("Complete current software study milestone", "Learning", "pre-move", -10, false, "Choose one achievable milestone to finish before moving."),
-      task("Keep a weekly Norwegian practice streak", "Learning", "pre-move", -7, false, "Focus on useful phrases for travel, shopping, and administration."),
-      task("Prepare the move-day document folder", "Documents", "pre-move", -4, true, "Include travel details, ID, address, contacts, and essential records."),
-      task("Settle the essential rooms first", "Personal", "arrival", 3, true, "Start with sleeping, bathroom, kitchen, and a small work area."),
-      task("Complete the local administration checklist", "Norway", "arrival", 6, true, "List the registrations and services that apply to your situation."),
-      task("Set up the first monthly budget", "Finance", "arrival", 9, true, "Replace estimates with the first real costs you observe."),
-      task("Update CV and begin the job search routine", "Work", "settling", 24, true, "Create a repeatable weekly plan for applications and networking."),
-      task("Build a stable study and language routine", "Learning", "settling", 36, false, "Keep the routine small enough to survive busy weeks."),
-    ],
-  };
-}
-
-function loadState() {
-  const fallback = createInitialState();
-
+async function persistState(message) {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (!stored) return fallback;
-
-    const parsed = JSON.parse(stored);
-    if (!parsed || typeof parsed !== "object") return fallback;
-
-    return {
-      version: DATA_VERSION,
-      settings: { ...fallback.settings, ...(parsed.settings || {}) },
-      finance: {
-        ...fallback.finance,
-        ...(parsed.finance || {}),
-        moveExpenses: Array.isArray(parsed.finance?.moveExpenses) ? parsed.finance.moveExpenses : fallback.finance.moveExpenses,
-        monthlyExpenses: Array.isArray(parsed.finance?.monthlyExpenses) ? parsed.finance.monthlyExpenses : fallback.finance.monthlyExpenses,
-      },
-      tasks: Array.isArray(parsed.tasks) ? parsed.tasks : fallback.tasks,
-    };
-  } catch (error) {
-    console.warn("Northbound could not read saved data.", error);
-    return fallback;
-  }
-}
-
-function saveState(message) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    state = await repository.save(state);
     if (message) showToast(message);
+    return true;
   } catch (error) {
     console.error("Northbound could not save data.", error);
     showToast("This change could not be saved on this device.");
+    return false;
   }
 }
 
@@ -295,7 +226,8 @@ function setView(view, updateHash = true) {
 
 function renderDashboard() {
   const moveDate = state.settings.moveDate;
-  const daysToMove = differenceInDays(todayISO(), moveDate);
+  const moveStatus = getMoveStatus(moveDate, currentDateOnly());
+  const daysToMove = moveStatus.daysUntilMove;
   const preMoveTasks = state.tasks.filter((task) => task.phase === "pre-move");
   const preMoveCompleted = preMoveTasks.filter((task) => task.completed).length;
   const readiness = percentage(preMoveCompleted, preMoveTasks.length);
@@ -343,7 +275,7 @@ function renderDashboardPriorities() {
 }
 
 function renderDashboardFinances() {
-  const metrics = getFinancialMetrics();
+  const metrics = getFinancialMetrics(state.finance);
   elements.dashboardAvailable.textContent = formatMoney(metrics.availableByMove);
   elements.dashboardSavings.textContent = formatMoney(state.finance.currentSavings);
   elements.dashboardTarget.textContent = state.finance.savingsGoal > 0 ? formatMoney(state.finance.savingsGoal) : "Not set";
@@ -431,7 +363,7 @@ function renderTasksView() {
 }
 
 function renderFinanceView() {
-  const metrics = getFinancialMetrics();
+  const metrics = getFinancialMetrics(state.finance);
   const goalPercent = percentage(state.finance.currentSavings, state.finance.savingsGoal);
   const remainingText = metrics.remainingAfterMove < 0
     ? `${formatMoney(Math.abs(metrics.remainingAfterMove))} gap to cover`
@@ -536,7 +468,8 @@ function priorityTaskHTML(task) {
 
 function fullTaskHTML(task) {
   const due = getDueInfo(task);
-  const reminder = task.reminderDate ? `<span>Reminder ${formatDate(task.reminderDate, "short")}</span>` : "";
+  const reminderDate = getReminderDateForInput(task, deviceTimezone);
+  const reminder = reminderDate ? `<span>Reminder ${formatDate(reminderDate, "short")}</span>` : "";
   return `
     <article class="task-item ${task.completed ? "is-completed" : ""}">
       <button class="task-complete-button" type="button" data-action="toggle-task" data-id="${escapeAttribute(task.id)}" aria-label="${task.completed ? "Reopen" : "Complete"} ${escapeAttribute(task.title)}">${ICONS.check}</button>
@@ -590,7 +523,7 @@ function openTaskDialog(taskId = "") {
     elements.taskCategory.value = task.category;
     elements.taskPhase.value = task.phase;
     elements.taskDueDate.value = task.dueDate || "";
-    elements.taskReminderDate.value = task.reminderDate || "";
+    elements.taskReminderDate.value = getReminderDateForInput(task, deviceTimezone);
     elements.taskNotes.value = task.notes || "";
     elements.taskImportant.checked = Boolean(task.important);
   }
@@ -599,7 +532,7 @@ function openTaskDialog(taskId = "") {
   requestAnimationFrame(() => elements.taskTitle.focus());
 }
 
-function handleTaskSubmit(event) {
+async function handleTaskSubmit(event) {
   if (event.submitter?.value === "cancel") return;
   event.preventDefault();
   if (!elements.taskForm.reportValidity()) return;
@@ -612,7 +545,12 @@ function handleTaskSubmit(event) {
     category: elements.taskCategory.value,
     phase: elements.taskPhase.value,
     dueDate: elements.taskDueDate.value,
-    reminderDate: elements.taskReminderDate.value,
+    ...createReminderFields(elements.taskReminderDate.value, {
+      timezone: existing?.reminderTimezone
+        || state.notificationPreferences.defaultReminderTimezone
+        || deviceTimezone,
+      existingTask: existing,
+    }),
     notes: elements.taskNotes.value.trim(),
     important: elements.taskImportant.checked,
     updatedAt: now,
@@ -620,7 +558,7 @@ function handleTaskSubmit(event) {
 
   if (existing) {
     Object.assign(existing, taskData);
-    saveState("Task updated");
+    await persistState("Task updated");
   } else {
     state.tasks.push({
       id: createId(),
@@ -628,19 +566,19 @@ function handleTaskSubmit(event) {
       createdAt: now,
       ...taskData,
     });
-    saveState("Task added");
+    await persistState("Task added");
   }
 
   elements.taskDialog.close();
   renderAll();
 }
 
-function toggleTask(taskId) {
+async function toggleTask(taskId) {
   const task = state.tasks.find((item) => item.id === taskId);
   if (!task) return;
   task.completed = !task.completed;
   task.updatedAt = new Date().toISOString();
-  saveState(task.completed ? "Task completed" : "Task reopened");
+  await persistState(task.completed ? "Task completed" : "Task reopened");
   renderAll();
 }
 
@@ -651,21 +589,21 @@ function requestTaskDelete(taskId) {
     "Delete this task?",
     `“${task.title}” will be permanently removed from this device.`,
     "Delete task",
-    () => {
+    async () => {
       state.tasks = state.tasks.filter((item) => item.id !== taskId);
-      saveState("Task deleted");
+      await persistState("Task deleted");
       renderAll();
     },
   );
 }
 
-function handleFinanceSubmit(event) {
+async function handleFinanceSubmit(event) {
   event.preventDefault();
   if (!elements.financeOverviewForm.reportValidity()) return;
   state.finance.currentSavings = toAmount(elements.currentSavings.value);
   state.finance.savingsGoal = toAmount(elements.savingsGoal.value);
   state.finance.expectedIncome = toAmount(elements.expectedIncome.value);
-  saveState("Savings plan updated");
+  await persistState("Savings plan updated");
   renderAll();
 }
 
@@ -689,7 +627,7 @@ function openExpenseDialog(type, expenseId = "") {
   requestAnimationFrame(() => elements.expenseName.focus());
 }
 
-function handleExpenseSubmit(event) {
+async function handleExpenseSubmit(event) {
   if (event.submitter?.value === "cancel") return;
   event.preventDefault();
   if (!elements.expenseForm.reportValidity()) return;
@@ -702,7 +640,7 @@ function handleExpenseSubmit(event) {
   if (existing) Object.assign(existing, data);
   else list.push({ id: createId(), ...data });
 
-  saveState(existing ? "Expense updated" : "Expense added");
+  await persistState(existing ? "Expense updated" : "Expense added");
   elements.expenseDialog.close();
   renderAll();
 }
@@ -715,9 +653,9 @@ function requestExpenseDelete(type, expenseId) {
     "Delete this estimate?",
     `“${expense.name}” will be removed from your financial plan.`,
     "Delete expense",
-    () => {
+    async () => {
       state.finance[key] = state.finance[key].filter((item) => item.id !== expenseId);
-      saveState("Expense deleted");
+      await persistState("Expense deleted");
       renderAll();
     },
   );
@@ -731,7 +669,7 @@ function openPlanDialog() {
   elements.planDialog.showModal();
 }
 
-function handlePlanSubmit(event) {
+async function handlePlanSubmit(event) {
   if (event.submitter?.value === "cancel") return;
   event.preventDefault();
   if (!elements.planForm.reportValidity()) return;
@@ -740,7 +678,7 @@ function handlePlanSubmit(event) {
   state.settings.destination = elements.planDestination.value.trim();
   state.settings.moveDate = elements.planMoveDate.value;
   state.settings.currency = elements.planCurrency.value;
-  saveState("Move plan updated");
+  await persistState("Move plan updated");
   elements.planDialog.close();
   renderAll();
 }
@@ -758,20 +696,20 @@ function requestReset() {
     "Reset Northbound?",
     "All tasks, financial figures, and move-plan changes on this device will be replaced with the starting checklist.",
     "Reset everything",
-    () => {
-      state = createInitialState();
+    async () => {
+      state = await repository.reset();
       elements.taskSearch.value = "";
       elements.phaseFilter.value = "all";
       elements.statusFilter.value = "open";
       elements.categoryFilter.value = "all";
-      saveState("Northbound has been reset");
+      showToast("Northbound has been reset");
       renderAll();
     },
   );
 }
 
 function exportData() {
-  const dateStamp = todayISO();
+  const dateStamp = currentDateOnly();
   const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
@@ -784,25 +722,8 @@ function exportData() {
   showToast("Backup exported");
 }
 
-function getFinancialMetrics() {
-  const moveCosts = sumAmounts(state.finance.moveExpenses);
-  const monthlyCosts = sumAmounts(state.finance.monthlyExpenses);
-  const availableByMove = toAmount(state.finance.currentSavings) + toAmount(state.finance.expectedIncome);
-  const remainingAfterMove = availableByMove - moveCosts;
-  return {
-    moveCosts,
-    monthlyCosts,
-    availableByMove,
-    remainingAfterMove,
-    runway: monthlyCosts > 0 ? Math.max(0, remainingAfterMove) / monthlyCosts : null,
-  };
-}
-
 function getCurrentPhase() {
-  const daysToMove = differenceInDays(todayISO(), state.settings.moveDate);
-  if (daysToMove > 0) return "pre-move";
-  if (daysToMove >= -30) return "arrival";
-  return "settling";
+  return getMovePhase(state.settings.moveDate, currentDateOnly());
 }
 
 function phasePreviewDate(phase) {
@@ -812,41 +733,25 @@ function phasePreviewDate(phase) {
 }
 
 function getDueInfo(task) {
-  if (!task.dueDate) return { key: "none", text: "" };
-  if (task.completed) return { key: "complete", text: `Completed · due ${formatDate(task.dueDate, "short")}` };
-
-  const days = differenceInDays(todayISO(), task.dueDate);
-  if (days < 0) return { key: "overdue", text: `${Math.abs(days)}d overdue` };
-  if (days === 0) return { key: "today", text: "Due today" };
-  if (days === 1) return { key: "soon", text: "Due tomorrow" };
-  if (days <= 7) return { key: "soon", text: `Due in ${days} days` };
-  return { key: "scheduled", text: `Due ${formatDate(task.dueDate, "short")}` };
+  const status = getTaskDueStatus(task, currentDateOnly());
+  if (status.key === "none") return { ...status, text: "" };
+  if (status.key === "complete") {
+    return { ...status, text: `Completed · due ${formatDate(task.dueDate, "short")}` };
+  }
+  if (status.key === "overdue") return { ...status, text: `${Math.abs(status.daysUntilDue)}d overdue` };
+  if (status.key === "today") return { ...status, text: "Due today" };
+  if (status.daysUntilDue === 1) return { ...status, text: "Due tomorrow" };
+  if (status.key === "soon") return { ...status, text: `Due in ${status.daysUntilDue} days` };
+  return { ...status, text: `Due ${formatDate(task.dueDate, "short")}` };
 }
 
 function compareTaskPriority(a, b) {
-  if (a.completed !== b.completed) return a.completed ? 1 : -1;
-
-  const rank = (task) => {
-    const due = getDueInfo(task).key;
-    if (due === "overdue") return 0;
-    if (due === "today") return 1;
-    if (task.important) return 2;
-    if (due === "soon") return 3;
-    if (task.dueDate) return 4;
-    return 5;
-  };
-
-  const rankDifference = rank(a) - rank(b);
-  if (rankDifference) return rankDifference;
-  if (a.dueDate && b.dueDate) return a.dueDate.localeCompare(b.dueDate);
-  if (a.dueDate) return -1;
-  if (b.dueDate) return 1;
-  return (b.updatedAt || "").localeCompare(a.updatedAt || "");
+  return compareTasksByPriority(a, b, currentDateOnly());
 }
 
 function formatDate(value, style = "short") {
   if (!value) return "";
-  const date = parseDate(value);
+  const date = dateOnlyToLocalDate(value);
   if (Number.isNaN(date.getTime())) return "";
   const options = style === "long"
     ? { weekday: "long", day: "numeric", month: "long", year: "numeric" }
@@ -881,48 +786,14 @@ function percentage(value, total) {
   return Math.max(0, Math.min(100, Math.round((safeValue / safeTotal) * 100)));
 }
 
-function sumAmounts(items) {
-  return items.reduce((sum, item) => sum + toAmount(item.amount), 0);
-}
-
-function toAmount(value) {
-  const number = Number.parseFloat(value);
-  return Number.isFinite(number) ? Math.max(0, number) : 0;
-}
 
 function numberInputValue(value) {
   const number = Number(value);
   return Number.isFinite(number) ? String(number) : "0";
 }
 
-function todayISO() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
-function parseDate(value) {
-  const [year, month, day] = value.split("-").map(Number);
-  return new Date(year, month - 1, day, 12, 0, 0);
-}
-
-function differenceInDays(fromValue, toValue) {
-  const from = parseDate(fromValue);
-  const to = parseDate(toValue);
-  const fromUTC = Date.UTC(from.getFullYear(), from.getMonth(), from.getDate());
-  const toUTC = Date.UTC(to.getFullYear(), to.getMonth(), to.getDate());
-  return Math.round((toUTC - fromUTC) / 86400000);
-}
-
-function offsetDate(value, days) {
-  const date = parseDate(value);
-  date.setDate(date.getDate() + days);
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+function currentDateOnly() {
+  return dateOnlyInTimezone(new Date(), deviceTimezone);
 }
 
 function createId() {

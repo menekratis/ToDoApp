@@ -188,7 +188,7 @@ python3 -m http.server 8766
 
 Then open `http://localhost:8766`.
 
-Opening `index.html` directly also works in modern browsers, although a local server is recommended.
+Because the application now uses native ES modules, run it through a local server rather than opening `index.html` as a file.
 
 ## Data and privacy
 
@@ -208,8 +208,55 @@ The proof of concept was checked with:
 ## Project structure
 
 ```text
-index.html   Application structure, views, forms, and dialogs
-style.css    Nordic-inspired responsive design and interaction states
-script.js    State, persistence, calculations, rendering, and user actions
-README.md    Product brief and implementation notes
+index.html                              Application structure, forms, and dialogs
+style.css                               Nordic-inspired responsive design
+script.js                               UI rendering and asynchronous event handlers
+js/domain/dates.js                      Date-only, timezone, and UTC conversion logic
+js/domain/finance.js                    Financial totals and runway calculations
+js/domain/move.js                       Move countdown and phase rules
+js/domain/tasks.js                      Due status and priority ordering
+js/domain/reminders.js                  Reminder creation and legacy normalisation
+js/repositories/state-repository.js     Repository contract
+js/repositories/local-storage-state-repository.js
+                                        Current localStorage implementation
+js/state/application-state.js           Versioned defaults and state normalisation
+tests/                                  Domain, repository, and flow tests
+package.json                            Native ES module and test configuration
 ```
+
+## Milestone 1 architecture
+
+### Domain modules
+
+Calculations no longer depend on the DOM, global application state, or storage. The UI passes the configured move date, current date, tasks, or finance data into small pure functions and renders their results. September 10, 2026 exists only as the seeded move date in `js/state/application-state.js`; changing `state.settings.moveDate` immediately changes the countdown, phase, and phase dates.
+
+### Repository abstraction
+
+`StateRepository` defines asynchronous `load()`, `save()`, and `reset()` operations. The UI keeps an in-memory state for rendering but reaches persistence only through `LocalStorageStateRepository`. A future API-backed repository can implement the same methods without replacing the task, finance, or move-plan UI.
+
+The localStorage key remains `northbound-move-dashboard-v1` so existing browser data is found automatically.
+
+### State version 2 and reminder migration
+
+On load, the local repository normalises existing data to schema version 2 and writes the normalised value back to the same storage key. Existing settings, task IDs, notes, completion state, financial values, and expense rows are preserved.
+
+Tasks now use:
+
+```text
+reminderAtUtc       Precise ISO-8601 UTC timestamp, or null
+reminderTimezone    IANA timezone such as Europe/Bucharest, or null
+```
+
+A valid legacy `reminderDate` is converted to 09:00 in the browser's IANA timezone. The conversion uses the timezone rules for that date, including daylight-saving time. Already precise timestamps are retained, including their time, when the current date-only form is saved without changing the reminder date. An unrecognised legacy value is kept in `reminderDate` for manual recovery rather than discarded.
+
+Version 2 also seeds notification preferences for future task reminders, overdue-important reminders, move milestones, financial warnings, preparation warnings, default timezone/time, and quiet hours. These are data structures only; no notification delivery, service worker, PWA, subscription, or backend is present.
+
+## Tests
+
+Run the dependency-free Node test suite with:
+
+```bash
+npm test
+```
+
+The suite covers date-only and DST behaviour, financial runway, move-phase boundaries, configurable move dates, task due status and sorting, reminder normalisation, localStorage migration, repository persistence, task CRUD, finance updates, and the browser entry module graph.

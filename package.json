@@ -1,0 +1,9 @@
+{
+  "name": "northbound-move-dashboard",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "check": "node --check script.js"
+  }
+}

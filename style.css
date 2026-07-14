@@ -1251,9 +1251,7 @@ textarea:focus {
   gap: 18px;
 }
 
-.finance-input-panel {
-  grid-row: span 2;
-}
+
 
 .stacked-form {
   display: grid;
@@ -1791,7 +1789,9 @@ textarea:focus {
   .finance-input-panel {
     grid-row: auto;
   }
-
+  .finance-input-panel {
+  grid-row: span 2;
+  }
   .phase-timeline {
     grid-template-columns: 1fr;
   }
