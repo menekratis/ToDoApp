@@ -64,6 +64,9 @@
           </div>
           <div class="topbar-actions">
             <span class="phase-pill" id="phasePill"></span>
+            
+            <button class="button button-secondary" id="editPlanFromPage" type="button">Edit move details</button>
+            
             <button class="button button-primary" id="quickAddTask" type="button">
               <span aria-hidden="true">+</span> Add task
             </button>
@@ -155,15 +158,9 @@
             </div>
           </section>
 
-          <section class="view" id="tasksView" data-view="tasks" aria-labelledby="tasksHeading">
-            <div class="section-heading">
-              <div>
-                <p class="overline overline-dark">Action list</p>
-                <h2 id="tasksHeading">Tasks & goals</h2>
-                <p>Keep the next step obvious and the rest organised.</p>
-              </div>
-              <button class="button button-primary desktop-action" id="addTaskFromPage" type="button"><span aria-hidden="true">+</span> Add task</button>
-            </div>
+          <section class="view" id="tasksView" data-view="tasks" >
+            
+            
 
             <div class="task-stats" id="taskStats"></div>
 
@@ -202,13 +199,9 @@
             <div class="task-list" id="taskList"></div>
           </section>
 
-          <section class="view" id="financesView" data-view="finances" aria-labelledby="financesHeading">
+          <section class="view" id="financesView" data-view="finances" >
             <div class="section-heading">
-              <div>
-                <p class="overline overline-dark">Financial plan</p>
-                <h2 id="financesHeading">Know your landing position</h2>
-                <p>Plan in one currency so every estimate stays comparable.</p>
-              </div>
+              
               <span class="currency-badge" id="currencyBadge">EUR planning currency</span>
             </div>
 
@@ -266,11 +259,10 @@
           <section class="view" id="planView" data-view="plan" aria-labelledby="planHeading">
             <div class="section-heading">
               <div>
-                <p class="overline overline-dark">The bigger picture</p>
-                <h2 id="planHeading">Your move plan</h2>
+                
                 <p id="planRouteSummary"></p>
               </div>
-              <button class="button button-secondary" id="editPlanFromPage" type="button">Edit move details</button>
+             
             </div>
 
             <section class="phase-timeline" id="phaseTimeline"></section>
@@ -309,7 +301,7 @@
       <form method="dialog" id="taskForm">
         <div class="modal-header">
           <div><p class="overline overline-dark">Task details</p><h2 id="taskDialogTitle">Add a task</h2></div>
-          <button class="icon-button modal-close" value="cancel" aria-label="Close" type="submit">×</button>
+          <button class="icon-button modal-close" value="cancel" aria-label="Close" type="submit" formnovalidate>×</button>
         </div>
         <input id="taskId" name="taskId" type="hidden" />
         <div class="form-grid">
@@ -321,7 +313,7 @@
           <label class="full-width">Notes<textarea id="taskNotes" name="notes" rows="3" maxlength="500" placeholder="Useful details, links, or the next action"></textarea></label>
           <label class="checkbox-field full-width"><input id="taskImportant" name="important" type="checkbox" /><span><strong>Mark as important</strong><small>Important tasks are raised on your dashboard.</small></span></label>
         </div>
-        <div class="modal-actions"><button class="button button-quiet" value="cancel" type="submit">Cancel</button><button class="button button-primary" id="saveTaskButton" value="default" type="submit">Save task</button></div>
+        <div class="modal-actions"><button class="button button-quiet" value="cancel" type="submit" formnovalidate>Cancel</button><button class="button button-primary" id="saveTaskButton" value="default" type="submit">Save task</button></div>
       </form>
     </dialog>
 

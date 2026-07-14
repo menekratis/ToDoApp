@@ -1789,9 +1789,7 @@ textarea:focus {
   .finance-input-panel {
     grid-row: auto;
   }
-  .finance-input-panel {
-  grid-row: span 2;
-  }
+ 
   .phase-timeline {
     grid-template-columns: 1fr;
   }

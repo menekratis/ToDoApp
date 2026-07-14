@@ -102,9 +102,9 @@ function bindEvents() {
     button.addEventListener("click", () => setView(button.dataset.viewLink));
   });
 
-  ["quickAddTask", "addTaskFromPage"].forEach((id) => {
-    document.getElementById(id).addEventListener("click", () => openTaskDialog());
-  });
+  document
+  .getElementById("quickAddTask")
+  .addEventListener("click", () => openTaskDialog());
 
   ["openPlanSettings", "editPlanFromPage"].forEach((id) => {
     document.getElementById(id).addEventListener("click", openPlanDialog);
