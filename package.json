@@ -4,6 +4,6 @@
   "type": "module",
   "scripts": {
     "test": "node --test",
-    "check": "node --check script.js"
+    "check": "node --check script.js && node --check service-worker.js && node --check js/pwa/app-shell.js && node --check js/pwa/register-service-worker.js"
   }
 }

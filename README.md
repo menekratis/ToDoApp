@@ -249,7 +249,7 @@ reminderTimezone    IANA timezone such as Europe/Bucharest, or null
 
 A valid legacy `reminderDate` is converted to 09:00 in the browser's IANA timezone. The conversion uses the timezone rules for that date, including daylight-saving time. Already precise timestamps are retained, including their time, when the current date-only form is saved without changing the reminder date. An unrecognised legacy value is kept in `reminderDate` for manual recovery rather than discarded.
 
-Version 2 also seeds notification preferences for future task reminders, overdue-important reminders, move milestones, financial warnings, preparation warnings, default timezone/time, and quiet hours. These are data structures only; no notification delivery, service worker, PWA, subscription, or backend is present.
+Version 2 also seeds notification preferences for future task reminders, overdue-important reminders, move milestones, financial warnings, preparation warnings, default timezone/time, and quiet hours. These preferences remain data structures only; milestone 2 adds the offline PWA shell, but no notification delivery, permission prompt, push subscription, or backend.
 
 ## Tests
 
@@ -259,4 +259,6 @@ Run the dependency-free Node test suite with:
 npm test
 ```
 
-The suite covers date-only and DST behaviour, financial runway, move-phase boundaries, configurable move dates, task due status and sorting, reminder normalisation, localStorage migration, repository persistence, task CRUD, finance updates, and the browser entry module graph.
+The suite covers date-only and DST behaviour, financial runway, move-phase boundaries, configurable move dates, task due status and sorting, reminder normalisation, localStorage migration, repository persistence, task CRUD, finance updates, the browser entry module graph, manifest validity, app-shell paths, service-worker offline behaviour, and the preserved dialog and layout contracts.
+
+Milestone 2's PWA design and cache-update rules are documented in `docs/pwa.md`.

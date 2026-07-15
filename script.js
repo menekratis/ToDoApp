@@ -10,6 +10,7 @@ import { getFinancialMetrics, toNonNegativeAmount as toAmount } from "./js/domai
 import { getMovePhase, getMoveStatus } from "./js/domain/move.js";
 import { createReminderFields, getReminderDateForInput } from "./js/domain/reminders.js";
 import { compareTasksByPriority, getTaskDueStatus } from "./js/domain/tasks.js";
+import { registerServiceWorker } from "./js/pwa/register-service-worker.js";
 import { LocalStorageStateRepository } from "./js/repositories/local-storage-state-repository.js";
 
 const CATEGORIES = ["Documents", "Health", "Finance", "Norway", "Packing", "Learning", "Work", "Personal"];
@@ -47,6 +48,7 @@ let toastTimer = null;
 
 const elements = {};
 
+void registerServiceWorker();
 document.addEventListener("DOMContentLoaded", () => void init());
 
 async function init() {
